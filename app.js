@@ -177,25 +177,37 @@ function renderAnalyticsCharts(cardsPerPlayer, analyticsData) {
         options: { responsive: true, scales: { y: { beginAtZero: true, max: 100 } } }
     });
 
-    // 3. Timing Chart (Bonus data mapped)
+    // 3. Timing Chart
     const timingLabels = ['1-10', '11-20', '21-30', '31-40', '41-50', '51-60', '61-70', '71-80', '81-90', '91-100'];
-    const timingData = timingLabels.map(label => {
+    const timingDataWon = timingLabels.map(label => {
         const d = analyticsData.passRatesByValue[label];
-        return d.total > 0 ? (d.timeSum / d.total) / 1000 : 0;
+        return d.countWon > 0 ? (d.timeSumWon / d.countWon) / 1000 : 0;
+    });
+    const timingDataLost = timingLabels.map(label => {
+        const d = analyticsData.passRatesByValue[label];
+        return d.countLost > 0 ? (d.timeSumLost / d.countLost) / 1000 : 0;
     });
 
     chartInstances[`timing-${cardsPerPlayer}`] = new Chart(ctxTiming, {
         type: 'line',
         data: {
             labels: timingLabels,
-            datasets: [{
-                label: 'Avg Wait Time (s)',
-                data: timingData,
-                borderColor: '#6366f1',
-                tension: 0.3,
-                fill: true,
-                backgroundColor: 'rgba(99, 102, 241, 0.1)'
-            }]
+            datasets: [
+                {
+                    label: 'Avg Wait Time - Winning Games (s)',
+                    data: timingDataWon,
+                    borderColor: '#34d399',
+                    tension: 0.3,
+                    fill: false
+                },
+                {
+                    label: 'Avg Wait Time - Losing Games (s)',
+                    data: timingDataLost,
+                    borderColor: '#f43f5e',
+                    tension: 0.3,
+                    fill: false
+                }
+            ]
         },
         options: { responsive: true }
     });
@@ -292,7 +304,7 @@ DOM.btnBatchSim.addEventListener('click', () => {
         let firstCardWonValues = [];
         let firstCardLostValues = [];
         const passRatesByValue = {};
-        ranges.forEach(r => passRatesByValue[r] = { pass: 0, total: 0, timeSum: 0 });
+        ranges.forEach(r => passRatesByValue[r] = { pass: 0, total: 0, timeSumWon: 0, countWon: 0, timeSumLost: 0, countLost: 0 });
 
         for (let i = 0; i < config.numSims; i++) {
             const batchSim = new TheMindSimulation({ ...config, cardsPerPlayer: cCount });
@@ -311,7 +323,14 @@ DOM.btnBatchSim.addEventListener('click', () => {
                 
                 passRatesByValue[rangeKey].total++;
                 if (l.status === 'pass') passRatesByValue[rangeKey].pass++;
-                passRatesByValue[rangeKey].timeSum += l.timeBetween;
+                
+                if (batchSim.status === 'won') {
+                    passRatesByValue[rangeKey].timeSumWon += l.timeBetween;
+                    passRatesByValue[rangeKey].countWon++;
+                } else {
+                    passRatesByValue[rangeKey].timeSumLost += l.timeBetween;
+                    passRatesByValue[rangeKey].countLost++;
+                }
 
                 if (l.isFirstCard) {
                     if (batchSim.status === 'won') firstCardWonValues.push(l.card);
