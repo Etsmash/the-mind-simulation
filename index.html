@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="description" content="A beautiful and interactive simulation of The Mind card game.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Mind Simulation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="background-anim"></div>
+    <div class="container">
+        <header>
+            <h1>The Mind Simulation</h1>
+            <p>An experimental strategy laboratory to test communication-less coordination.</p>
+        </header>
+
+        <div class="main-layout">
+            <!-- Sidebar / Options Menu -->
+            <aside class="glass-panel options-panel">
+                <h2>Parameters</h2>
+                <div class="control-group">
+                    <label for="num-players">Number of Players</label>
+                    <input type="range" id="num-players" min="2" max="20" value="4">
+                    <span id="num-players-val" class="val-display">4</span>
+                </div>
+                
+                <div class="control-group">
+                    <label for="cards-per-player">Cards Per Player</label>
+                    <input type="range" id="cards-per-player" min="1" max="25" value="5">
+                    <span id="cards-per-player-val" class="val-display">5</span>
+                </div>
+
+                <div class="control-group">
+                    <label for="time-multiplier" title="How long players wait per difference in card value">Time Multiplier (Strategy)</label>
+                    <input type="range" id="time-multiplier" min="10" max="1000" value="300" step="10">
+                    <span id="time-multiplier-val" class="val-display">300</span>
+                </div>
+
+                <div class="control-group">
+                    <label for="variance" title="Randomness in player timing (human error)">Variance / Error Margin</label>
+                    <input type="range" id="variance" min="0" max="1000" value="150" step="10">
+                    <span id="variance-val" class="val-display">150</span>
+                </div>
+
+                <div class="control-group">
+                    <label for="num-sims">Number of Simulations</label>
+                    <input type="number" id="num-sims" min="100" max="100000" value="1000" step="100">
+                </div>
+
+                <div class="actions">
+                    <button class="btn primary-btn" id="btn-visual-sim">Visual Simulation</button>
+                    <button class="btn secondary-btn" id="btn-batch-sim">Run Batch Analysis</button>
+                </div>
+            </aside>
+
+            <!-- Gameplay Area -->
+            <main class="glass-panel play-area">
+                <!-- Status Bar -->
+                <div class="status-bar">
+                    <div class="stat">Cards Left: <span id="stat-cards-left">0</span></div>
+                    <div class="stat">Status: <span id="stat-status">Idle</span></div>
+                </div>
+
+                <!-- Simulation Visuals -->
+                <div class="game-stage" id="game-stage">
+                    <div class="center-pile" id="center-pile">
+                        <div class="empty-pile">0</div>
+                    </div>
+                    <div class="players-container" id="players-container">
+                        <!-- Player divs injected here -->
+                    </div>
+                </div>
+
+                <!-- Batch Results Area -->
+                <div class="batch-results hidden" id="batch-results">
+                    <h2>Simulation Results</h2>
+                    <div class="results-stats">
+                        <div class="r-stat">Win Rate: <span id="r-winrate">0%</span></div>
+                        <!-- removed avg levels -->
+                    </div>
+                    <div class="advice-box">
+                        <h3>Strategy Advice</h3>
+                        <p id="r-advice">Run a simulation with different variances to see how well the strategy performs!</p>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+        
+        <!-- Log Area -->
+        <footer class="glass-panel log-panel">
+            <h3>Event Log</h3>
+            <div id="event-log" class="log-container">
+                <div>Welcome to The Mind. Adjust parameters and choose a simulation mode.</div>
+            </div>
+        </footer>
+
+        <!-- Analytics Dashboard -->
+        <section class="glass-panel analytics-panel hidden" id="analytics-panel">
+            <h2>Analytics Dashboard</h2>
+            <p class="analytics-subtitle">Data mined from batch simulations across 1–5 cards per player.</p>
+
+            <div class="tab-bar" id="tab-bar">
+                <button class="tab-btn active" data-tab="1">1 Card</button>
+                <button class="tab-btn" data-tab="2">2 Cards</button>
+                <button class="tab-btn" data-tab="3">3 Cards</button>
+                <button class="tab-btn" data-tab="4">4 Cards</button>
+                <button class="tab-btn" data-tab="5">5 Cards</button>
+            </div>
+
+            <div class="tab-content" id="tab-content">
+                <!-- Tab 1 -->
+                <div class="tab-pane active" data-tab="1">
+                    <div class="chart-row">
+                        <div class="chart-box">
+                            <h4>Pass vs Fail by Card Value (1-100)</h4>
+                            <canvas id="chart-passfail-1"></canvas>
+                        </div>
+                        <div class="chart-box">
+                            <h4>First Card Played: Wins vs Losses</h4>
+                            <canvas id="chart-firstcard-1"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-row">
+                        <div class="chart-box full-width">
+                            <h4>Avg Time Between Placements</h4>
+                            <canvas id="chart-timing-1"></canvas>
+                        </div>
+                    </div>
+                    <div class="advice-box analytics-advice">
+                        <h3>Strategy Advice (1 Card)</h3>
+                        <p id="advice-1">Run the batch to generate advice.</p>
+                    </div>
+                </div>
+
+                <!-- Tab 2 -->
+                <div class="tab-pane" data-tab="2">
+                    <div class="chart-row">
+                        <div class="chart-box">
+                            <h4>Pass vs Fail by Card Value (1-100)</h4>
+                            <canvas id="chart-passfail-2"></canvas>
+                        </div>
+                        <div class="chart-box">
+                            <h4>First Card Played: Wins vs Losses</h4>
+                            <canvas id="chart-firstcard-2"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-row">
+                        <div class="chart-box full-width">
+                            <h4>Avg Time Between Placements</h4>
+                            <canvas id="chart-timing-2"></canvas>
+                        </div>
+                    </div>
+                    <div class="advice-box analytics-advice">
+                        <h3>Strategy Advice (2 Cards)</h3>
+                        <p id="advice-2">Run the batch to generate advice.</p>
+                    </div>
+                </div>
+
+                <!-- Tab 3 -->
+                <div class="tab-pane" data-tab="3">
+                    <div class="chart-row">
+                        <div class="chart-box">
+                            <h4>Pass vs Fail by Card Value (1-100)</h4>
+                            <canvas id="chart-passfail-3"></canvas>
+                        </div>
+                        <div class="chart-box">
+                            <h4>First Card Played: Wins vs Losses</h4>
+                            <canvas id="chart-firstcard-3"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-row">
+                        <div class="chart-box full-width">
+                            <h4>Avg Time Between Placements</h4>
+                            <canvas id="chart-timing-3"></canvas>
+                        </div>
+                    </div>
+                    <div class="advice-box analytics-advice">
+                        <h3>Strategy Advice (3 Cards)</h3>
+                        <p id="advice-3">Run the batch to generate advice.</p>
+                    </div>
+                </div>
+
+                <!-- Tab 4 -->
+                <div class="tab-pane" data-tab="4">
+                    <div class="chart-row">
+                        <div class="chart-box">
+                            <h4>Pass vs Fail by Card Value (1-100)</h4>
+                            <canvas id="chart-passfail-4"></canvas>
+                        </div>
+                        <div class="chart-box">
+                            <h4>First Card Played: Wins vs Losses</h4>
+                            <canvas id="chart-firstcard-4"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-row">
+                        <div class="chart-box full-width">
+                            <h4>Avg Time Between Placements</h4>
+                            <canvas id="chart-timing-4"></canvas>
+                        </div>
+                    </div>
+                    <div class="advice-box analytics-advice">
+                        <h3>Strategy Advice (4 Cards)</h3>
+                        <p id="advice-4">Run the batch to generate advice.</p>
+                    </div>
+                </div>
+
+                <!-- Tab 5 -->
+                <div class="tab-pane" data-tab="5">
+                    <div class="chart-row">
+                        <div class="chart-box">
+                            <h4>Pass vs Fail by Card Value (1-100)</h4>
+                            <canvas id="chart-passfail-5"></canvas>
+                        </div>
+                        <div class="chart-box">
+                            <h4>First Card Played: Wins vs Losses</h4>
+                            <canvas id="chart-firstcard-5"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-row">
+                        <div class="chart-box full-width">
+                            <h4>Avg Time Between Placements</h4>
+                            <canvas id="chart-timing-5"></canvas>
+                        </div>
+                    </div>
+                    <div class="advice-box analytics-advice">
+                        <h3>Strategy Advice (5 Cards)</h3>
+                        <p id="advice-5">Run the batch to generate advice.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="simulation.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
