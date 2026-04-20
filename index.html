@@ -98,10 +98,14 @@
             </div>
         </footer>
 
-        <!-- Analytics Dashboard -->
         <section class="glass-panel analytics-panel hidden" id="analytics-panel">
-            <h2>Analytics Dashboard</h2>
-            <p class="analytics-subtitle">Data mined from batch simulations across 1–5 cards per player.</p>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;">
+                <div>
+                    <h2>Analytics Dashboard</h2>
+                    <p class="analytics-subtitle" style="margin-bottom: 0;">Data mined from batch simulations across 1–5 cards per player.</p>
+                </div>
+                <button class="btn secondary-btn" id="btn-export-csv" style="margin-top: 0;">📥 Download CSV Data</button>
+            </div>
 
             <div class="tab-bar" id="tab-bar">
                 <button class="tab-btn active" data-tab="1">1 Card</button>

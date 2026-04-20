@@ -26,8 +26,12 @@ const DOM = {
     eventLog: document.getElementById('event-log'),
     
     rWinrate: document.getElementById('r-winrate'),
-    rAdvice: document.getElementById('r-advice')
+    rAdvice: document.getElementById('r-advice'),
+    btnExportCsv: document.getElementById('btn-export-csv')
 };
+
+// Global storage for the latest batch data
+let lastBatchLogs = [];
 
 // Map to store chart instances for cleanup
 const chartInstances = {};
@@ -227,6 +231,41 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     });
 });
 
+// CSV Export Logic
+DOM.btnExportCsv.addEventListener('click', () => {
+    if (lastBatchLogs.length === 0) {
+        alert("Please run a Batch Analysis first to generate data!");
+        return;
+    }
+
+    let csvRows = [];
+    const headers = ['game_id', 'cards_per_player', 'num_players', 'player_index', 'card_value', 'wait_time_s', 'is_first_card', 'play_status', 'game_outcome'];
+    csvRows.push(headers.join(','));
+
+    lastBatchLogs.forEach(entry => {
+        const row = [
+            entry.gameId,
+            entry.cardsPerPlayer,
+            entry.numPlayers,
+            entry.player,
+            entry.card,
+            (entry.timeBetween / 1000).toFixed(4),
+            entry.isFirstCard ? 1 : 0,
+            entry.status,
+            entry.outcome
+        ];
+        csvRows.push(row.join(','));
+    });
+
+    const csvString = csvRows.join('\n');
+    const blob = new Blob([csvString], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.setAttribute('href', url);
+    a.setAttribute('download', 'the_mind_simulation_data.csv');
+    a.click();
+});
+
 DOM.btnVisualSim.addEventListener('click', () => {
     // Start Visual Simulation
     if (visualSimInterval) clearInterval(visualSimInterval);
@@ -297,6 +336,9 @@ DOM.btnBatchSim.addEventListener('click', () => {
     DOM.analyticsPanel.classList.remove('hidden');
 
     const ranges = ['1-10', '11-20', '21-30', '31-40', '41-50', '51-60', '61-70', '71-80', '81-90', '91-100'];
+    
+    lastBatchLogs = []; // Reset global logs for export
+    let globalGameCounter = 0;
 
     // Loop through 1 to 5 cards per hand
     for (let cCount = 1; cCount <= 5; cCount++) {
@@ -307,6 +349,7 @@ DOM.btnBatchSim.addEventListener('click', () => {
         ranges.forEach(r => passRatesByValue[r] = { pass: 0, total: 0, timeSumWon: 0, countWon: 0, timeSumLost: 0, countLost: 0 });
 
         for (let i = 0; i < config.numSims; i++) {
+            globalGameCounter++;
             const batchSim = new TheMindSimulation({ ...config, cardsPerPlayer: cCount });
             batchSim.startRound();
             
@@ -318,6 +361,19 @@ DOM.btnBatchSim.addEventListener('click', () => {
             
             // Analyze the logs of this single game
             batchSim.logs.forEach(l => {
+                // Add to global logs for CSV export
+                lastBatchLogs.push({
+                    gameId: globalGameCounter,
+                    cardsPerPlayer: cCount,
+                    numPlayers: config.numPlayers,
+                    player: l.player,
+                    card: l.card,
+                    timeBetween: l.timeBetween,
+                    isFirstCard: l.isFirstCard,
+                    status: l.status,
+                    outcome: batchSim.status
+                });
+
                 const rangeIdx = Math.min(9, Math.floor((l.card - 1) / 10));
                 const rangeKey = ranges[rangeIdx];
                 
