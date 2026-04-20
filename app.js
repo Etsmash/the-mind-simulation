@@ -181,7 +181,7 @@ function renderAnalyticsCharts(cardsPerPlayer, analyticsData) {
     const timingLabels = ['1-10', '11-20', '21-30', '31-40', '41-50', '51-60', '61-70', '71-80', '81-90', '91-100'];
     const timingData = timingLabels.map(label => {
         const d = analyticsData.passRatesByValue[label];
-        return d.total > 0 ? d.timeSum / d.total : 0;
+        return d.total > 0 ? (d.timeSum / d.total) / 1000 : 0;
     });
 
     chartInstances[`timing-${cardsPerPlayer}`] = new Chart(ctxTiming, {
@@ -189,7 +189,7 @@ function renderAnalyticsCharts(cardsPerPlayer, analyticsData) {
         data: {
             labels: timingLabels,
             datasets: [{
-                label: 'Avg Wait Time (ms)',
+                label: 'Avg Wait Time (s)',
                 data: timingData,
                 borderColor: '#6366f1',
                 tension: 0.3,
